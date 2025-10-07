@@ -8,7 +8,7 @@ import youid/uuid.{type Uuid}
 pub type Subscription {
   Subscription(
     id: Uuid,
-    subscription_type: Type,
+    subscription_type: SubscriptionType,
     version: String,
     status: String,
     cost: Int,
@@ -20,7 +20,10 @@ pub type Subscription {
 
 pub fn subscription_decoder() -> decode.Decoder(Subscription) {
   use id <- decode.field("id", internal.uuid_decoder())
-  use subscription_type <- decode.field("subscription_type", type_decoder())
+  use subscription_type <- decode.field(
+    "subscription_type",
+    subscription_type_decoder(),
+  )
   use version <- decode.field("version", decode.string)
   use status <- decode.field("status", decode.string)
   use cost <- decode.field("cost", decode.int)
@@ -39,11 +42,11 @@ pub fn subscription_decoder() -> decode.Decoder(Subscription) {
   ))
 }
 
-pub type Type {
+pub type SubscriptionType {
   ChannelChatMessage
 }
 
-pub fn type_decoder() -> decode.Decoder(Type) {
+pub fn subscription_type_decoder() -> decode.Decoder(SubscriptionType) {
   use variant <- decode.then(decode.string)
   case variant {
     "channel.chat.message" -> decode.success(ChannelChatMessage)

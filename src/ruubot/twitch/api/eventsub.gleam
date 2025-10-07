@@ -3,7 +3,7 @@ import ruubot/twitch/eventsub/subscription.{type Subscription}
 
 pub type CreateEventsubSubscriptionRequest {
   CreateSubscriptionRequest(
-    subscription_type: subscription.Type,
+    subscription_type: subscription.SubscriptionType,
     version: String,
     condition: Condition,
     transport: TransportRequest,

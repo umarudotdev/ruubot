@@ -3,7 +3,9 @@ import gleam/option.{type Option}
 import gleam/time/timestamp.{type Timestamp}
 import ruubot/internal
 import ruubot/twitch/eventsub/event.{type Event}
-import ruubot/twitch/eventsub/subscription.{type Subscription, type Type}
+import ruubot/twitch/eventsub/subscription.{
+  type Subscription, type SubscriptionType,
+}
 
 pub type Message {
   SessionWelcomeMessage(
@@ -33,14 +35,48 @@ pub type Metadata {
   )
 }
 
+pub fn metadata_decoder() -> decode.Decoder(Metadata) {
+  use message_id <- decode.field("message_id", decode.string)
+  use message_type <- decode.field("message_type", message_type_decoder())
+  use message_timestamp <- decode.field(
+    "message_timestamp",
+    internal.timestamp_decoder(),
+  )
+  decode.success(Metadata(message_id:, message_type:, message_timestamp:))
+}
+
 pub type SubscriptionMetadata {
   SubscriptionMetadata(
     message_id: String,
     message_type: MessageType,
     message_timestamp: Timestamp,
-    subscription_type: Type,
+    subscription_type: SubscriptionType,
     subscription_version: String,
   )
+}
+
+pub fn subscription_metadata_decoder() -> decode.Decoder(SubscriptionMetadata) {
+  use message_id <- decode.field("message_id", decode.string)
+  use message_type <- decode.field("message_type", message_type_decoder())
+  use message_timestamp <- decode.field(
+    "message_timestamp",
+    internal.timestamp_decoder(),
+  )
+  use subscription_type <- decode.field(
+    "subscription_type",
+    subscription.subscription_type_decoder(),
+  )
+  use subscription_version <- decode.field(
+    "subscription_version",
+    decode.string,
+  )
+  decode.success(SubscriptionMetadata(
+    message_id:,
+    message_type:,
+    message_timestamp:,
+    subscription_type:,
+    subscription_version:,
+  ))
 }
 
 pub type MessageType {
