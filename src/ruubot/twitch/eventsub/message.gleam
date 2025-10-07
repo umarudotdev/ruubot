@@ -12,8 +12,8 @@ pub fn message_decoder() -> decode.Decoder(Message) {
 
 pub type Fragment {
   TextFragment(text: String)
-  EmoteFragment(text: String, emote: Emote)
   CheermoteFragment(text: String, cheermote: Cheermote)
+  EmoteFragment(text: String, emote: Emote)
   MentionFragment(text: String, mention: Mention)
 }
 
@@ -24,15 +24,15 @@ pub fn fragment_decoder() -> decode.Decoder(Fragment) {
       use text <- decode.field("text", decode.string)
       decode.success(TextFragment(text:))
     }
-    "emote_fragment" -> {
-      use text <- decode.field("text", decode.string)
-      use emote <- decode.field("emote", emote_decoder())
-      decode.success(EmoteFragment(text:, emote:))
-    }
     "cheermote_fragment" -> {
       use text <- decode.field("text", decode.string)
       use cheermote <- decode.field("cheermote", cheermote_decoder())
       decode.success(CheermoteFragment(text:, cheermote:))
+    }
+    "emote_fragment" -> {
+      use text <- decode.field("text", decode.string)
+      use emote <- decode.field("emote", emote_decoder())
+      decode.success(EmoteFragment(text:, emote:))
     }
     "mention_fragment" -> {
       use text <- decode.field("text", decode.string)
@@ -41,17 +41,6 @@ pub fn fragment_decoder() -> decode.Decoder(Fragment) {
     }
     _ -> decode.failure(TextFragment(""), "Fragment")
   }
-}
-
-pub type Emote {
-  Emote(id: String, emote_set_id: String, format: List(String))
-}
-
-pub fn emote_decoder() -> decode.Decoder(Emote) {
-  use id <- decode.field("id", decode.string)
-  use emote_set_id <- decode.field("emote_set_id", decode.string)
-  use format <- decode.field("format", decode.list(decode.string))
-  decode.success(Emote(id:, emote_set_id:, format:))
 }
 
 pub type Cheermote {
@@ -63,6 +52,23 @@ pub fn cheermote_decoder() -> decode.Decoder(Cheermote) {
   use bits <- decode.field("bits", decode.int)
   use tier <- decode.field("tier", decode.int)
   decode.success(Cheermote(prefix:, bits:, tier:))
+}
+
+pub type Emote {
+  Emote(
+    id: String,
+    emote_set_id: String,
+    owner_id: String,
+    format: List(String),
+  )
+}
+
+pub fn emote_decoder() -> decode.Decoder(Emote) {
+  use id <- decode.field("id", decode.string)
+  use emote_set_id <- decode.field("emote_set_id", decode.string)
+  use owner_id <- decode.field("owner_id", decode.string)
+  use format <- decode.field("format", decode.list(decode.string))
+  decode.success(Emote(id:, emote_set_id:, owner_id:, format:))
 }
 
 pub type Mention {
