@@ -18,24 +18,21 @@ pub type Fragment {
 }
 
 pub fn fragment_decoder() -> decode.Decoder(Fragment) {
+  use text <- decode.field("text", decode.string)
   use variant <- decode.field("type", decode.string)
   case variant {
-    "text_fragment" -> {
-      use text <- decode.field("text", decode.string)
+    "text" -> {
       decode.success(TextFragment(text:))
     }
-    "cheermote_fragment" -> {
-      use text <- decode.field("text", decode.string)
+    "cheermote" -> {
       use cheermote <- decode.field("cheermote", cheermote_decoder())
       decode.success(CheermoteFragment(text:, cheermote:))
     }
-    "emote_fragment" -> {
-      use text <- decode.field("text", decode.string)
+    "emote" -> {
       use emote <- decode.field("emote", emote_decoder())
       decode.success(EmoteFragment(text:, emote:))
     }
-    "mention_fragment" -> {
-      use text <- decode.field("text", decode.string)
+    "mention" -> {
       use mention <- decode.field("mention", mention_decoder())
       decode.success(MentionFragment(text:, mention:))
     }

@@ -4,7 +4,7 @@ import gleam/time/timestamp.{type Timestamp}
 import ruubot/internal
 import ruubot/twitch/eventsub/event.{type Event}
 import ruubot/twitch/eventsub/subscription.{
-  type Subscription, type SubscriptionType,
+  type Subscription, type Type as SubscriptionType,
 }
 
 pub type Message {
@@ -13,18 +13,47 @@ pub type Message {
     payload: SessionWelcomeMessagePayload,
   )
   SessionKeepaliveMessage(metadata: Metadata)
-  NotificationMessage(
-    metadata: SubscriptionMetadata,
-    payload: NotificationMessagePayload,
-  )
+  NotificationMessage(metadata: Metadata, payload: NotificationMessagePayload)
   SessionReconnectMessage(
     metadata: Metadata,
     payload: SessionReconnectMessagePayload,
   )
-  RevocationMessage(
-    metadata: SubscriptionMetadata,
-    payload: RevocationMessagePayload,
-  )
+  RevocationMessage(metadata: Metadata, payload: RevocationMessagePayload)
+}
+
+pub fn message_decoder() -> decode.Decoder(Message) {
+  use metadata <- decode.field("metadata", metadata_decoder())
+  case metadata.message_type {
+    SessionWelcome -> {
+      use payload <- decode.field(
+        "payload",
+        session_welcome_message_payload_decoder(),
+      )
+      decode.success(SessionWelcomeMessage(metadata:, payload:))
+    }
+    SessionKeepalive -> decode.success(SessionKeepaliveMessage(metadata:))
+    Notification -> {
+      use payload <- decode.field(
+        "payload",
+        notification_message_payload_decoder(),
+      )
+      decode.success(NotificationMessage(metadata:, payload:))
+    }
+    SessionReconnect -> {
+      use payload <- decode.field(
+        "payload",
+        session_reconnect_message_payload_decoder(),
+      )
+      decode.success(SessionReconnectMessage(metadata:, payload:))
+    }
+    Revocation -> {
+      use payload <- decode.field(
+        "payload",
+        revocation_message_payload_decoder(),
+      )
+      decode.success(RevocationMessage(metadata:, payload:))
+    }
+  }
 }
 
 pub type Metadata {
@@ -33,19 +62,6 @@ pub type Metadata {
     message_type: MessageType,
     message_timestamp: Timestamp,
   )
-}
-
-pub fn metadata_decoder() -> decode.Decoder(Metadata) {
-  use message_id <- decode.field("message_id", decode.string)
-  use message_type <- decode.field("message_type", message_type_decoder())
-  use message_timestamp <- decode.field(
-    "message_timestamp",
-    internal.timestamp_decoder(),
-  )
-  decode.success(Metadata(message_id:, message_type:, message_timestamp:))
-}
-
-pub type SubscriptionMetadata {
   SubscriptionMetadata(
     message_id: String,
     message_type: MessageType,
@@ -55,28 +71,34 @@ pub type SubscriptionMetadata {
   )
 }
 
-pub fn subscription_metadata_decoder() -> decode.Decoder(SubscriptionMetadata) {
+pub fn metadata_decoder() -> decode.Decoder(Metadata) {
   use message_id <- decode.field("message_id", decode.string)
-  use message_type <- decode.field("message_type", message_type_decoder())
   use message_timestamp <- decode.field(
     "message_timestamp",
     internal.timestamp_decoder(),
   )
-  use subscription_type <- decode.field(
-    "subscription_type",
-    subscription.subscription_type_decoder(),
-  )
-  use subscription_version <- decode.field(
-    "subscription_version",
-    decode.string,
-  )
-  decode.success(SubscriptionMetadata(
-    message_id:,
-    message_type:,
-    message_timestamp:,
-    subscription_type:,
-    subscription_version:,
-  ))
+  use message_type <- decode.field("message_type", message_type_decoder())
+  case message_type {
+    Notification | Revocation -> {
+      use subscription_type <- decode.field(
+        "subscription_type",
+        subscription.type_decoder(),
+      )
+      use subscription_version <- decode.field(
+        "subscription_version",
+        decode.string,
+      )
+      decode.success(SubscriptionMetadata(
+        message_id:,
+        message_type:,
+        message_timestamp:,
+        subscription_type:,
+        subscription_version:,
+      ))
+    }
+    _ ->
+      decode.success(Metadata(message_id:, message_type:, message_timestamp:))
+  }
 }
 
 pub type MessageType {

@@ -52,6 +52,6 @@ pub fn method_decoder() -> decode.Decoder(Method) {
   case variant {
     "webhook" -> decode.success(Webhook)
     "websocket" -> decode.success(Websocket)
-    _ -> decode.failure(Webhook, "Method")
+    _ -> decode.failure(Webhook, "Type")
   }
 }
